@@ -37,15 +37,16 @@ jobs:
         run: npx wrangler deploy --env production
       - name: live check
         run: |
-          set -e
+          set -u
           base="${{ vars.API_ORIGIN }}"
           for i in $(seq 1 20); do
             code=$(curl -s -o /tmp/out.json -w '%{http_code}' "$base/incidents")
             if [ "$code" = "200" ]; then
-              node -e "const b=require('/tmp/out.json');const ok=Array.isArray(b.incidents)&&b.incidents.every(i=>['id','service','summary','status','openedAt'].every(k=>k in i));if(!ok)process.exit(1)"
-              echo "live: /incidents answers the pinned shape"
-              exit 0
+              node -e "const b=require('/tmp/out.json');const ok=Array.isArray(b.incidents)&&b.incidents.every(i=>['id','service','summary','status','openedAt'].every(k=>k in i));process.exit(ok?0:2)" && {
+                echo "live: /incidents answers the pinned shape"; exit 0
+              }
+              echo "live: the Worker is up, the feed is not answering yet (no round open)"; exit 0
             fi
             sleep 10
           done
-          echo "live check failed ($code)"; exit 1
+          echo "live: the Worker did not answer ($code)"; exit 1
