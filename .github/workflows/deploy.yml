@@ -39,7 +39,7 @@ jobs:
         run: |
           set -u
           base="${{ vars.API_ORIGIN }}"
-          for i in $(seq 1 20); do
+          for i in $(seq 1 6); do
             code=$(curl -s -o /tmp/out.json -w '%{http_code}' "$base/incidents")
             if [ "$code" = "200" ]; then
               node -e "const b=require('/tmp/out.json');const ok=Array.isArray(b.incidents)&&b.incidents.every(i=>['id','service','summary','status','openedAt'].every(k=>k in i));process.exit(ok?0:2)" && {
@@ -49,4 +49,4 @@ jobs:
             fi
             sleep 10
           done
-          echo "live: the Worker did not answer ($code)"; exit 1
+          echo "live: the Worker itself failed to answer ($code)"; exit 1
