@@ -4,8 +4,8 @@ compatibility_date = "2026-10-01"
 
 [vars]
 # Where production incidents come from: the feed URL the round hands you.
-FEED_URL = ""
+FEED_URL = "https://hq.mega.dev/challenges/out-of-office/feed/7fff189bdfde/incidents"
 
-# Production: what `npm run deploy` ships.
+# Production: what the deploy workflow ships.
 [env.production]
 workers_dev = true
