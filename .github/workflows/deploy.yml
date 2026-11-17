@@ -12,6 +12,7 @@ on:
       issue:
         description: the issue number this ships
         required: false
+        type: string
 
 permissions:
   contents: write
