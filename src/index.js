@@ -1,6 +1,6 @@
 // sched-prod API: the incidents the status page and the board read. Contract: contract/api.md.
 
-import { route } from './routes.js';
+import { route, queryReads } from './routes.js';
 
 const json = (body, status = 200) => Response.json(body, { status });
 
@@ -15,7 +15,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === 'GET' && url.pathname === '/incidents') {
-      return json({ incidents: await feed(env) });
+      const incidents = await feed(env);
+      for (const read of queryReads) {
+        const hit = read.match(url);
+        if (hit) return json(read.answer(hit, incidents));
+      }
+      return json({ incidents });
     }
     if (request.method === 'GET') {
       const hit = await route(request, env, await feed(env));

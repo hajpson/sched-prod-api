@@ -4,8 +4,12 @@
 
 import * as one from './reads/one.js';
 import * as grouped from './reads/grouped.js';
+import * as filter from './reads/filter.js';
 
 const reads = [one, grouped];
+
+// Reads that keep the /incidents path and answer by query.
+export const queryReads = [filter];
 
 export async function route(request, env, incidents) {
   if (request.method !== 'GET') return null;
