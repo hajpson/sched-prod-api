@@ -49,6 +49,3 @@ jobs:
             sleep 10
           done
           echo "live check failed ($code)"; exit 1
-      - name: shiplog note
-        if: always()
-        run: echo "deploy for issue ${{ github.event.inputs.issue || github.sha }} finished: ${{ job.status }}"
