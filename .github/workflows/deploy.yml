@@ -1,0 +1,53 @@
+name: deploy
+
+# The API ships when the agent pushes src/index.js, or when someone runs this by hand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/index.js'
+      - 'wrangler.toml'
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: the issue number this ships
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ship-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+      - name: deploy
+        run: npx wrangler deploy --env production
+      - name: live check
+        run: |
+          set -e
+          base="${{ vars.API_ORIGIN }}"
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /tmp/out.json -w '%{http_code}' "$base/incidents")
+            if [ "$code" = "200" ]; then
+              node -e "const b=require('/tmp/out.json');const ok=Array.isArray(b.incidents)&&b.incidents.every(i=>['id','service','summary','status','openedAt'].every(k=>k in i));if(!ok)process.exit(1)"
+              echo "live: /incidents answers the pinned shape"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "live check failed ($code)"; exit 1
+      - name: shiplog note
+        if: always()
+        run: echo "deploy for issue ${{ github.event.inputs.issue || github.sha }} finished: ${{ job.status }}"
